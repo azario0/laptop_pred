@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laptop Price Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-white shadow-lg rounded-lg p-8">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Laptop Price Predictor</h1>
+            
+            <form id="predictionForm" class="space-y-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Company</label>
+                        <select id="Company" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Product</label>
+                        <select id="Product" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Type Name</label>
+                        <select id="TypeName" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Screen Resolution</label>
+                        <select id="ScreenResolution" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Screen Size (Inches)</label>
+                        <input type="number" id="Inches" step="0.1" class="w-full p-2 border rounded-md" placeholder="e.g. 13.3">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">CPU Company</label>
+                        <select id="CPU_Company" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">CPU Type</label>
+                        <select id="CPU_Type" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">CPU Frequency (GHz)</label>
+                        <input type="number" id="CPU_Frequency_GHz" step="0.1" class="w-full p-2 border rounded-md" placeholder="e.g. 2.3">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">RAM (GB)</label>
+                        <select id="RAM_GB" class="w-full p-2 border rounded-md select2-select">
+                            <option value="4">4 GB</option>
+                            <option value="8">8 GB</option>
+                            <option value="16">16 GB</option>
+                            <option value="32">32 GB</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Memory</label>
+                        <select id="Memory" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">GPU Company</label>
+                        <select id="GPU_Company" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">GPU Type</label>
+                        <select id="GPU_Type" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Operating System</label>
+                        <select id="OpSys" class="w-full p-2 border rounded-md select2-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">Weight (kg)</label>
+                        <input type="number" id="Weight_kg" step="0.1" class="w-full p-2 border rounded-md" placeholder="e.g. 1.37">
+                    </div>
+                </div>
+                
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-300">
+                    Predict Laptop Price
+                </button>
+            </form>
+            
+            <div id="resultContainer" class="mt-6 text-center hidden">
+                <h2 class="text-2xl font-bold text-gray-800">Predicted Price</h2>
+                <p id="priceResult" class="text-3xl font-extrabold text-green-600 mt-2">€ 0</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Fetch unique values for dropdowns
+            $.ajax({
+                url: '/get_unique_values',
+                method: 'GET',
+                success: function(data) {
+                    console.log("Unique values received:", data);
+        
+                    // Populate dropdowns
+                    Object.keys(data).forEach(key => {
+                        const $select = $(`#${key}`);
+                        if ($select.length === 0) {
+                            console.warn(`No select element found for key: ${key}`);
+                            return;
+                        }
+        
+                        // Clear existing options
+                        $select.empty();
+        
+                        // Add default placeholder option
+                        $select.append(new Option(`Select ${key}`, ''));
+        
+                        // Add unique values
+                        data[key].forEach(value => {
+                            $select.append(new Option(value, value));
+                        });
+        
+                        // Initialize Select2
+                        $select.select2({
+                            placeholder: `Select ${key}`,
+                            allowClear: true
+                        });
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error("Failed to fetch unique values:", status, error);
+                    alert("Failed to load dropdown options. Please refresh the page.");
+                }
+            });
+        
+            // Rest of your existing script remains the same
+            $('#predictionForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect form data (same as before)
+                const formData = {
+                    Company: $('#Company').val(),
+                    Product: $('#Product').val(),
+                    TypeName: $('#TypeName').val(),
+                    ScreenResolution: $('#ScreenResolution').val(),
+                    Inches: parseFloat($('#Inches').val()),
+                    CPU_Company: $('#CPU_Company').val(),
+                    CPU_Type: $('#CPU_Type').val(),
+                    'CPU_Frequency (GHz)': parseFloat($('#CPU_Frequency_GHz').val()),
+                    'RAM (GB)': parseInt($('#RAM_GB').val()),
+                    Memory: $('#Memory').val(),
+                    GPU_Company: $('#GPU_Company').val(),
+                    GPU_Type: $('#GPU_Type').val(),
+                    OpSys: $('#OpSys').val(),
+                    'Weight (kg)': parseFloat($('#Weight_kg').val())
+                };
+        
+                // Send prediction request
+                $.ajax({
+                    url: '/predict',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function(response) {
+                        $('#priceResult').text(`€ ${response.predicted_price.toFixed(2)}`);
+                        $('#resultContainer').removeClass('hidden');
+                    },
+                    error: function(xhr) {
+                        console.error("Prediction error:", xhr.responseJSON);
+                        alert(xhr.responseJSON.error || 'Prediction failed. Please check your inputs.');
+                    }
+                });
+            });
+        });
+        </script>
+</body>
+</html>
