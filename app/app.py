@@ -50,18 +50,24 @@ def predict():
         print(input_df.info())
 
         # Process non-numeric columns with label encoders
-        for col in columns_numeric: 
+        for col in columns_non_numeric:
             if col in label_encoders:
-                encoder = label_encoders[col]
-                try:
-                    input_df[col] = encoder.transform(input_df[col])
-                except Exception as e:
-                    return jsonify({'error': f'Invalid value for {col}: {input_data[col]}. Please check your inputs.'}), 400
+                mapping = label_encoders[col]
+                
+                # Map values using the stored dictionary
+                input_df[col] = input_df[col].map(mapping)
+                
+                # Check for unmapped values and handle them if necessary
+                if input_df[col].isnull().any():
+                    print(f"Warning: Unmapped values found in column '{col}'. These have been replaced with NaN.")
+            else:
+                raise KeyError(f"No mapping found for column '{col}' in label_encoders.")
 
         # Ensure numeric columns are properly converted
-        for col in columns_non_numeric:
+        for col in columns_numeric:
             if col in input_df:
                 input_df[col] = pd.to_numeric(input_df[col], errors='coerce')
+
 
         # Handle missing or invalid numeric data
         if input_df[columns_numeric].isnull().any().any():
